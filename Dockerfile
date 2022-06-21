@@ -2,7 +2,7 @@ FROM centos:centos7
 
 # Передаём id пользователя в систему:
 
-ENV USER_ID=1000
+ENV USER_ID=1005
 
 # Переключаюсь на суперпользователя:
 
@@ -14,24 +14,6 @@ RUN yum install -y boost-devel \
     php-devel lsb gcc-c++ wget \
     unzip sqlite-devel mc nano
 
-# RUN apt update && \
-#     apt install -y wget \
-#     libboost-dev sqlite3 \
-#     curl mc autoconf tar \
-#     libxml2-dev nano gcc \
-#     libsqlite3-dev sqlite3 \
-#     make g++ patch g++-6 php-dev
-
-# Настраиваю systemd
-
-# RUN find /etc/systemd/system \
-#          /lib/systemd/system \
-#          -path '*.wants/*' \
-#          -not -name '*journald*' \
-#          -not -name '*systemd-tmpfiles*' \
-#          -not -name '*systemd-user-sessions*' \
-#          -exec rm \{} \;
-
 # Устанавливаю рабочий каталог и копирую все нужные файлы:
 
 WORKDIR /tmp
@@ -41,17 +23,19 @@ COPY ./sources .
 # Создаю пользователя с тем же UID, что и в системе:
 
 RUN groupadd user && useradd --create-home user -g user && \
-    sed -i "s/user:x:1000:1000/user:x:${USER_ID}:${USER_ID}/g" /etc/passwd
+    sed -i "s/user:x:1000:1000/user:x:${USER_ID}:${USER_ID}/g" /etc/passwd && \
+    cp systemctlpatch/systemctl.py /usr/bin/systemctl
 
 # Устанавливаю КриптоПРО:
 
-#RUN cd /tmp/linux-amd64_rpm && chmod +x install.sh && ./install.sh && \
-    #dpkg -i lsb-cprocsp-devel-5.0.12500-6.noarch.rpm && cd /tmp/cades_linux && \
-    #dpkg -i cprocsp-pki-phpcades-64-2.0.14589-1.amd64.rpm && \
-    #dpkg -i cprocsp-pki-phpcades-64-2.0.14589-1.amd64.rpm
-    #cp /tmp/php7_sources/php-7.4.30.tar.gz /opt && cd /opt && \
-    #tar -xvzf php-7.4.30.tar.gz && mv php-7.2.24 php && \
-    #rm /opt/php-7.4.30.tar.gz && cd /opt/php/ && ./configure --prefix=/opt/php --enable-fpm && \
+RUN chmod a+x /usr/bin/systemctl && cd /tmp/linux-amd64_rpm && chmod +x install.sh && \
+    ./install.sh && rpm -i  lsb-cprocsp-devel-5.0.12500-6.noarch.rpm
+    cd /tmp/cades_linux && rpm -i cprocsp-pki-phpcades-64-2.0.14589-1.amd64.rpm && \
+    cd /tmp/libxml2.0 && rpm -i xz-devel-5.2.2-1.el7.x86_64.rpm && \
+    rpm -i zlib-devel-1.2.7-18.el7.x86_64.rpm && rpm -i libxml2-devel-2.9.1-6.el7.5.x86_64.rpm && \
+    cp /tmp/php7_sources/php-7.4.30.tar.gz /opt && cd /opt && \
+    tar -xvzf php-7.4.30.tar.gz && mv php-7.4.30 php && \
+    rm -y /opt/php-7.4.30.tar.gz && cd /opt/php/ && ./configure --prefix=/opt/php --enable-fpm && \
     #rm /opt/cprocsp/src/phpcades/Makefile.unix && \
     #cp /tmp/Makefile.unix /opt/cprocsp/src/phpcades/ && \
     ###### update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 10 && \
